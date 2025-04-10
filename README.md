@@ -42,64 +42,9 @@ IDE (e.g., IntelliJ IDEA, Eclipse)
 Maven or Gradle (for project dependencies)
 
 Stripe/PayPal account for payment integration
-
-Installation
-Clone this repository to your local machine:
-
-bash
-Copy
-Edit
-git clone https://github.com/your-username/photography-website.git
-Navigate to the project directory:
-
-bash
-Copy
-Edit
-cd photography-website
-Set up your MySQL database:
-
-Create a database named photography_website.
-
-Import the database schema from the db/schema.sql file (or equivalent).
-
-Configure the database connection in your application (e.g., update db.properties with your MySQL credentials).
-
-Set up the payment integration (e.g., Stripe or PayPal):
-
-Create an account on Stripe or PayPal and get your API keys.
-
-Add your API keys to the relevant configuration files.
-
-Build and run the project:
-
-If using Maven:
-
-bash
-Copy
-Edit
-mvn clean install
-mvn spring-boot:run
-If using Gradle:
-
-bash
-Copy
-Edit
-gradle build
-gradle bootRun
-Access the website by navigating to http://localhost:8080 in your browser.
-
 Usage
 Admin Login: Use the admin credentials to upload and delete photos.
 
 User Functionality: Browse, search, rate, review, and share photos.
 
 Payment: Users can make payments to download or purchase high-resolution images.
-
-
-
-Push to the branch (git push origin feature/your-feature).
-
-Create a new pull request.
-
-License
-This project is licensed under the MIT License - see the LICENSE file for details.
