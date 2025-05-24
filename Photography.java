@@ -1,174 +1,240 @@
+import javax.swing.*;
+import java.awt.*;
+import java.io.*;
+import java.text.*;
 import java.util.*;
 
+// ==================== Parent Class ====================
 class Photo {
     String title;
     String category;
     int rating;
+    String photographerName;
+    String uploadDate;
+    String description;
 
-    Photo(String title, String category) {
+    public Photo(String title, String category, String photographerName, String uploadDate, String description) {
         this.title = title;
         this.category = category;
+        this.photographerName = photographerName;
+        this.uploadDate = uploadDate;
+        this.description = description;
         this.rating = 0;
     }
 
-    void display() {
-        System.out.println("Title: " + title + " | Category: " + category + " | Rating: " + rating + "/5");
+    public String toString() {
+        return "Title: " + title +
+               " Category: " + category +
+               " Photographer: " + photographerName +
+               " Upload Date: " + uploadDate +
+               " Description: " + description +
+               " Rating: " + rating + "/5";
+    }
+
+    public String toFileFormat() {
+        return title + ";" + category + ";" + photographerName + ";" + uploadDate + ";" + description + ";" + rating;
     }
 }
 
+// ==================== Child Class ====================
 class Gallery {
     ArrayList<Photo> photos = new ArrayList<>();
+    String storageFile = "gallery_data.txt";
 
-    void addPhoto(String title, String category) {
-        for (Photo photo : photos) {
-            if (photo.title.equalsIgnoreCase(title)) {
-                System.out.println("Photo with this title already exists.");
+    public void loadPhotos() {
+        photos.clear();
+        try (BufferedReader reader = new BufferedReader(new FileReader(storageFile))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] data = line.split(";");
+                if (data.length == 6) {
+                    Photo photo = new Photo(data[0], data[1], data[2], data[3], data[4]);
+                    photo.rating = Integer.parseInt(data[5]);
+                    photos.add(photo);
+                }
+            }
+        } catch (IOException e) {
+            System.out.println("No previous data found.");
+        }
+    }
+
+    public void savePhotos() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(storageFile))) {
+            for (Photo photo : photos) {
+                writer.write(photo.toFileFormat());
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            System.out.println("Error saving photo data.");
+        }
+    }
+
+    public void addPhoto(Photo photo) {
+        for (Photo p : photos) {
+            if (p.title.equalsIgnoreCase(photo.title)) {
+                JOptionPane.showMessageDialog(null, "Photo with this title already exists.");
                 return;
             }
         }
-        photos.add(new Photo(title, category));
-        System.out.println("Photo added successfully.");
+        photos.add(photo);
+        savePhotos();
     }
 
-    void deletePhoto(String title) {
+    public void deletePhoto(String title) {
         Iterator<Photo> iterator = photos.iterator();
         while (iterator.hasNext()) {
-            Photo photo = iterator.next();
-            if (photo.title.equalsIgnoreCase(title)) {
+            Photo p = iterator.next();
+            if (p.title.equalsIgnoreCase(title)) {
                 iterator.remove();
-                System.out.println("Photo deleted successfully.");
+                savePhotos();
+                JOptionPane.showMessageDialog(null, "Photo deleted.");
                 return;
             }
         }
-        System.out.println("Photo not found.");
+        JOptionPane.showMessageDialog(null, "Photo not found.");
     }
 
-    void showGallery() {
-        if (photos.isEmpty()) {
-            System.out.println("Gallery is empty.");
-            return;
+    public Photo searchPhoto(String title) {
+        for (Photo p : photos) {
+            if (p.title.equalsIgnoreCase(title)) {
+                return p;
+            }
         }
-        System.out.println("Photo Gallery:");
-        for (Photo photo : photos) {
-            photo.display();
-        }
+        return null;
     }
 
-    void searchPhoto(String title) {
-        for (Photo photo : photos) {
-            if (photo.title.equalsIgnoreCase(title)) {
-                photo.display();
+    public ArrayList<Photo> filterByCategory(String category) {
+        ArrayList<Photo> result = new ArrayList<>();
+        for (Photo p : photos) {
+            if (p.category.equalsIgnoreCase(category)) {
+                result.add(p);
+            }
+        }
+        return result;
+    }
+
+    public void ratePhoto(String title, int rating) {
+        for (Photo p : photos) {
+            if (p.title.equalsIgnoreCase(title)) {
+                p.rating = rating;
+                savePhotos();
                 return;
             }
         }
-        System.out.println("Photo not found.");
-    }
-
-    void filterByCategory(String category) {
-        boolean found = false;
-        for (Photo photo : photos) {
-            if (photo.category.equalsIgnoreCase(category)) {
-                photo.display();
-                found = true;
-            }
-        }
-        if (!found) {
-            System.out.println("No photos found in this category.");
-        }
-    }
-
-    void ratePhoto(String title, int rating) {
-        if (rating < 1 || rating > 5) {
-            System.out.println("Invalid rating. Please enter a number between 1 and 5.");
-            return;
-        }
-
-        for (Photo photo : photos) {
-            if (photo.title.equalsIgnoreCase(title)) {
-                photo.rating = rating;
-                System.out.println("Photo rated successfully.");
-                return;
-            }
-        }
-        System.out.println("Photo not found.");
     }
 }
 
-public class Photography {
-    public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        Gallery gallery = new Gallery();
+// ==================== Main Class ====================
+public class Photography extends JFrame {
+    Gallery gallery = new Gallery();
+    JTextArea outputArea;
 
-        while (true) {
-            System.out.println("\n--- Photography Website ---");
-            System.out.println("1. View Gallery");
-            System.out.println("2. Search Photo");
-            System.out.println("3. Filter by Category");
-            System.out.println("4. Rate Photo");
-            System.out.println("5. Upload Photo (Admin)");
-            System.out.println("6. Delete Photo (Admin)");
-            System.out.println("7. Simulate Payment");
-            System.out.println("8. Share on Social Media");
-            System.out.println("9. Exit");
-            System.out.print("Enter choice: ");
+    public Photography() {
+        gallery.loadPhotos();
 
-            int choice;
-            try {
-                choice = Integer.parseInt(scanner.nextLine());
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid input. Please enter a number.");
-                continue;
+        setTitle("Photography Gallery");
+        setSize(600, 600);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        outputArea = new JTextArea();
+        outputArea.setEditable(false);
+        JScrollPane scrollPane = new JScrollPane(outputArea);
+        add(scrollPane, BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel(new GridLayout(3, 3));
+        add(buttonPanel, BorderLayout.SOUTH);
+
+        JButton viewBtn = new JButton("View Gallery");
+        JButton searchBtn = new JButton("Search Photo");
+        JButton filterBtn = new JButton("Filter by Category");
+        JButton rateBtn = new JButton("Rate Photo");
+        JButton uploadBtn = new JButton("Upload Photo");
+        JButton deleteBtn = new JButton("Delete Photo");
+        JButton payBtn = new JButton("Simulate Payment");
+        JButton shareBtn = new JButton("Share on Social Media");
+        JButton exitBtn = new JButton("Exit");
+
+        buttonPanel.add(viewBtn);
+        buttonPanel.add(searchBtn);
+        buttonPanel.add(filterBtn);
+        buttonPanel.add(rateBtn);
+        buttonPanel.add(uploadBtn);
+        buttonPanel.add(deleteBtn);
+        buttonPanel.add(payBtn);
+        buttonPanel.add(shareBtn);
+        buttonPanel.add(exitBtn);
+
+        viewBtn.addActionListener(e -> displayPhotos(gallery.photos));
+        searchBtn.addActionListener(e -> {
+            String title = JOptionPane.showInputDialog("Enter title:");
+            Photo p = gallery.searchPhoto(title);
+            outputArea.setText(p == null ? "Not found." : p.toString());
+        });
+        filterBtn.addActionListener(e -> {
+            String category = JOptionPane.showInputDialog("Enter category:");
+            displayPhotos(gallery.filterByCategory(category));
+        });
+        rateBtn.addActionListener(e -> {
+            String title = JOptionPane.showInputDialog("Enter title:");
+            String rateStr = JOptionPane.showInputDialog("Enter rating (1-5):");
+            int rate = Integer.parseInt(rateStr);
+            gallery.ratePhoto(title, rate);
+            outputArea.setText("Rated successfully.");
+        });
+        uploadBtn.addActionListener(e -> {
+            JTextField title = new JTextField();
+            JTextField category = new JTextField();
+            JTextField photographer = new JTextField();
+            JTextField date = new JTextField();
+            JTextField desc = new JTextField();
+
+            Object[] fields = {
+                "Title:", title,
+                "Category:", category,
+                "Photographer:", photographer,
+                "Upload Date (dd-MM-yyyy):", date,
+                "Description:", desc
+            };
+
+            int result = JOptionPane.showConfirmDialog(null, fields, "Upload Photo", JOptionPane.OK_CANCEL_OPTION);
+            if (result == JOptionPane.OK_OPTION) {
+                try {
+                    SimpleDateFormat df = new SimpleDateFormat("dd-MM-yyyy");
+                    df.setLenient(false);
+                    df.parse(date.getText());
+
+                    gallery.addPhoto(new Photo(title.getText(), category.getText(), photographer.getText(), date.getText(), desc.getText()));
+                    outputArea.setText("Photo added successfully.");
+                } catch (ParseException ex) {
+                    outputArea.setText("Invalid date format.");
+                }
             }
+        });
+        deleteBtn.addActionListener(e -> {
+            String title = JOptionPane.showInputDialog("Enter title to delete:");
+            gallery.deletePhoto(title);
+        });
+        payBtn.addActionListener(e -> outputArea.setText("Payment successful (simulated)."));
+        shareBtn.addActionListener(e -> outputArea.setText("Shared on Instagram (simulated)."));
+        exitBtn.addActionListener(e -> System.exit(0));
 
-            switch (choice) {
-                case 1:
-                    gallery.showGallery();
-                    break;
-                case 2:
-                    System.out.print("Enter photo title to search: ");
-                    gallery.searchPhoto(scanner.nextLine());
-                    break;
-                case 3:
-                    System.out.print("Enter category: ");
-                    gallery.filterByCategory(scanner.nextLine());
-                    break;
-                case 4:
-                    System.out.print("Enter photo title to rate: ");
-                    String rateTitle = scanner.nextLine();
-                    System.out.print("Enter rating (1-5): ");
-                    int rating;
-                    try {
-                        rating = Integer.parseInt(scanner.nextLine());
-                    } catch (NumberFormatException e) {
-                        System.out.println("Invalid rating input.");
-                        break;
-                    }
-                    gallery.ratePhoto(rateTitle, rating);
-                    break;
-                case 5:
-                    System.out.print("Enter title: ");
-                    String title = scanner.nextLine();
-                    System.out.print("Enter category: ");
-                    String category = scanner.nextLine();
-                    gallery.addPhoto(title, category);
-                    break;
-                case 6:
-                    System.out.print("Enter title to delete: ");
-                    gallery.deletePhoto(scanner.nextLine());
-                    break;
-                case 7:
-                    System.out.println("Payment successful! (simulated)");
-                    break;
-                case 8:
-                    System.out.println("Shared to Instagram (simulated)");
-                    break;
-                case 9:
-                    System.out.println("Exiting... Thank you!");
-                    scanner.close();
-                    return;
-                default:
-                    System.out.println("Invalid choice. Please select from 1 to 9.");
-            }
+        setVisible(true);
+    }
+
+    void displayPhotos(ArrayList<Photo> list) {
+        if (list.isEmpty()) {
+            outputArea.setText("No photos found.");
+            return;
         }
+        StringBuilder sb = new StringBuilder();
+        for (Photo p : list) {
+            sb.append(p.toString()).append("\n\n");
+        }
+        outputArea.setText(sb.toString());
+    }
+
+    public static void main(String[] args) {
+        new Photography();
     }
 }
